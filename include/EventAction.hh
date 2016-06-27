@@ -33,24 +33,17 @@
 
 #include "G4UserEventAction.hh"
 #include "globals.hh"
+#include <vector>
 
 class RunAction;
 class SteppingAction;
+class TrackingAction;
+
 
 class G4GenericMessenger;
 
 /// Event action class
 ///
-/// It defines data members to hold the energy deposit and track lengths
-/// of charged particles in Absober and Gap layers:
-/// - fEnergyAbs, fEnergyGap, fTrackLAbs, fTrackLGap
-/// which are collected step by step via the functions
-/// - AddAbs(), AddGap()
-/// 
-/// The data member fPrintModulo defines the frequency of printing
-/// the accumulated quantities. Its value can be changed via a command
-/// defined using G4GenericMessenger class:
-/// - //event/setPrintModulo value
 
 class EventAction : public G4UserEventAction
 {
@@ -62,18 +55,32 @@ class EventAction : public G4UserEventAction
     virtual void    EndOfEventAction(const G4Event* event);
     
     void AddAbs(G4double de, G4double dl);
-    void StorePrimaryEn(G4double primaryEn);
+    void StorePrimaryInfo(G4double primaryEn,G4double primaryX,G4double primaryY,G4double primaryZ);
                      
-    void SetPrintModulo(G4int value);
-    
+    void SetNumPhot(G4int value);
+    void SetDetPhot(G4int value);
+    void SetKillPhot(G4int value);    
+    void SetBackPhot(G4int value);        
+    void SetIntPoint(G4double copy, G4double x1, G4double y1, G4double z1, G4int num);        
     bool GetPrimaryRxn();
-    
+
   private:
     RunAction*  fRunAction;
-    SteppingAction* fSteppingAction;
     G4double  fPrimaryEn;   
+    G4double  fPrimaryX;       
+    G4double  fPrimaryY;
+    G4double  fPrimaryZ;
     G4double  fEnergyAbs;
     G4double  fTrackLAbs; 
+    G4double  fTrackPhot; 
+    G4double  fTrackDet; 
+    G4double  fTrackKilled; 
+    G4double  fTrackBack;
+
+    G4double 	  fCopy[10];
+    G4double  fx0; 
+    G4double  fy0; 
+    G4double  fz0; 
 	bool fPrimaryRxn;
                      
     G4int     fPrintModulo;
@@ -86,14 +93,40 @@ inline void EventAction::AddAbs(G4double de, G4double dl) {
   fTrackLAbs += dl;
 }
 
-inline void EventAction::StorePrimaryEn(G4double primaryEn) {
+inline void EventAction::StorePrimaryInfo(G4double primaryEn,G4double primaryX,G4double primaryY,G4double primaryZ) {
  fPrimaryEn = primaryEn;
-
+ fPrimaryX = primaryX;
+ fPrimaryY = primaryY;
+ fPrimaryZ = primaryZ;
 }
 
-inline void EventAction::SetPrintModulo(G4int value) {
-  fPrintModulo = value;
+inline void EventAction::SetNumPhot(G4int value) {
+  fTrackPhot += value;
+//  G4cout<<"set number of OP created to "<<fTrackPhot<<"\n";
 }
+
+inline void EventAction::SetDetPhot(G4int detVal) {
+  fTrackDet += detVal;
+//  G4cout<<"set number of detected OP to "<<fTrackDet<<"\n";
+}
+
+inline void EventAction::SetKillPhot(G4int killVal) {
+  fTrackKilled += killVal;
+//  G4cout<<"set number of killed OP to "<<fTrackKilled<<"\n";
+}
+
+inline void EventAction::SetBackPhot(G4int backVal) {
+  fTrackBack += backVal;
+//  G4cout<<"set number of backscattered OP to "<<fTrackBack<<"\n";
+}
+
+inline void EventAction::SetIntPoint(G4double copyi, G4double xi, G4double yi, G4double zi, G4int num) {
+  fCopy[num]=copyi;
+  fx0 = xi;
+  fy0 = yi;
+  fz0 = zi;
+}
+
                      
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

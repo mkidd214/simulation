@@ -48,10 +48,6 @@ public:
   SteppingAction(DetectorConstruction* detectorConstruction, EventAction* eventAction);
   bool isPrimary;
   virtual ~SteppingAction();
-  
-  void GetSecondariesOfCurrentStep(G4SteppingManager*);
-
-  bool KEchecker;
 
   virtual void UserSteppingAction(const G4Step* step);
   int n = 0;

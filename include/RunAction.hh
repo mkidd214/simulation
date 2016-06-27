@@ -5,7 +5,6 @@
 #include "globals.hh"
 
 class G4Run;
-class SteppingAction;
 
 /// Run action class
 ///
