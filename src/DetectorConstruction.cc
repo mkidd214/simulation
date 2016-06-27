@@ -87,7 +87,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	mptCsI->AddProperty("FASTCOMPONENT",PhotonEnergy,ScintilFast,nEntries)->SetSpline(true);
 	mptCsI->AddProperty("SLOWCOMPONENT",PhotonEnergy,ScintilSlow,nEntries)->SetSpline(true);
 	
-	mptCsI->AddConstProperty("SCINTILLATIONYIELD",0.01/keV);  //SHOULD BE 54 // used this to turn off OP for a while
+	mptCsI->AddConstProperty("SCINTILLATIONYIELD",0.5/keV);  //SHOULD BE 54 // used this to turn off OP for a while
 	mptCsI->AddConstProperty("RESOLUTIONSCALE",1.0);
 	mptCsI->AddConstProperty("FASTTIMECONSTANT",1.*ns);
 	mptCsI->AddConstProperty("SLOWTIMECONSTANT",100.*ns);
@@ -137,13 +137,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 	G4VPhysicalVolume* physCylinder = new G4PVPlacement(0,G4ThreeVector(),logicCylinder,"Cylinder",0,false,0,checkOverlaps);
 	
 	G4ThreeVector position = G4ThreeVector();
-	new G4PVPlacement(0,position,logicCylinder,"cylinder",logicWorld,false,0);
+//	new G4PVPlacement(0,position,logicCylinder,"cylinder",logicWorld,false,0);
 	
+	int k = 0;
 	//do these loops for all the cylinders
 	for (int i = -5; i < 5; i++) {
 		for (int j = -5; j < 5; j++) {
 			position = G4ThreeVector(20*i*um,20*j*um,0.0);
-			new G4PVPlacement(0,position,logicCylinder,"CsI",logicWorld,false,0);
+			new G4PVPlacement(0,position,logicCylinder,"CsI",logicWorld,false,k);
+			k++;
 		}
 	}
 	

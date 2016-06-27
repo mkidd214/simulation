@@ -61,7 +61,7 @@ RegisterPhysics( opticalPhysics );
 // adjust some parameters for the optical physics
 opticalPhysics->SetWLSTimeProfile("delta");
 
-opticalPhysics->SetScintillationYieldFactor(0.1);
+opticalPhysics->SetScintillationYieldFactor(1.0);
 opticalPhysics->SetScintillationExcitationRatio(0.0);
 opticalPhysics->SetMaxNumPhotonsPerStep(100);
 opticalPhysics->SetMaxBetaChangePerStep(10.0);
@@ -69,7 +69,7 @@ opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
 
    G4Scintillation* theScintProcess = new G4Scintillation("Scintillation");
    theScintProcess -> SetTrackSecondariesFirst(true);
-   theScintProcess -> SetScintillationYieldFactor(0.1);
+   theScintProcess -> SetScintillationYieldFactor(1.0);
 
 }
 

@@ -32,7 +32,6 @@
 #include "EventAction.hh"
 #include "DetectorConstruction.hh"
 #include "G4TrackingManager.hh"
-#include "G4SteppingManager.hh"
 
 #include "G4Step.hh"
 #include "G4RunManager.hh"
@@ -44,7 +43,6 @@ SteppingAction::SteppingAction(DetectorConstruction* detectorConstruction, Event
     fDetConstruction(detectorConstruction),
     fEventAction(eventAction)
 {
-	
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -57,18 +55,16 @@ SteppingAction::~SteppingAction()
 
 void SteppingAction::UserSteppingAction(const G4Step* step)
 {
-	G4SteppingManager *fSteppingManager = new G4SteppingManager();
-	
-	// Collect energy and track length step by step
-	//	G4cout<<"Step number:  "<<nstep<<"\t";
-  	// get volume of the current step
+  	
+  	G4int detPhot = 0;
+  	G4int killedPhot = 0;
+  	G4int backPhot = 0;
+  	
+//  	if(nstep == 0)copyNo.clear();
   	
   	G4VPhysicalVolume* volume = step->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
   	G4Track *track = step->GetTrack();
   	
-//  G4cout<<"takes place in volume "<<volume->GetName()<<"\t";
-//	G4cout<<"and is a "<<track->GetDefinition()->GetPDGEncoding()<<"\t"<<track->GetDefinition()->GetParticleName()<<"\n";
-//	G4cout<<"Current Step number "<<track->GetCurrentStepNumber()<<"\n";
 
 	isPrimary = fEventAction->GetPrimaryRxn();  //this is passed from EventAction.  
 				//If the primary is a particle instead of a nucleus, the energy is recorded there.
@@ -83,37 +79,42 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 	// and it was created by the radioactive decay (parentID = 1), then...
 	{	//we get the kinetic energy of the electron
 	G4double primaryEn = step->GetPreStepPoint()->GetKineticEnergy() / keV;
-	fEventAction->StorePrimaryEn(primaryEn);//passes KE of electron to event action where it can be stored in the ntuple
+	G4double primaryX = step->GetPreStepPoint()->GetPosition().x();
+	G4double primaryY = step->GetPreStepPoint()->GetPosition().y();
+	G4double primaryZ = step->GetPreStepPoint()->GetPosition().z();	
+	fEventAction->StorePrimaryInfo(primaryEn, primaryX, primaryY, primaryZ);//passes KE of electron to event action where it can be stored in the ntuple
 	}
-
 
 // if it's an optical photon, they can go on forever.  We want to kill some of these.  
 // Also killing daughter nuclei Np237 and N14 so that they don't fly off and collide with the CsI.  
 // Need to confine them to a material....
 
-  	if ( step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0. || track->GetDefinition()->GetPDGEncoding() == 1000932371 || track->GetDefinition()->GetPDGEncoding() == 1000070141 ||track->GetDefinition()->GetPDGEncoding() == -12 || track->GetDefinition()->GetPDGEncoding() == 1000090040) {//if it's an optical photon
+  	if ( step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0 || track->GetDefinition()->GetPDGEncoding() == 1000932371 || track->GetDefinition()->GetPDGEncoding() == 1000070141 ||track->GetDefinition()->GetPDGEncoding() == -12) {//if it's an optical photon
     	n++;
-
   		G4Track* track = step->GetTrack();
-  		if (n > 100 && step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0.) 
-  		{  //this one kills OPs that have reached 100 steps
+  		if (n > 100 && step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0) 
+  		{  //this one kills OPs that have reached n steps
 			track->SetTrackStatus(fStopAndKill);  
+//			G4cout<<"Killed optical photon\n";
 			n = 0;
+			killedPhot++;
+			fEventAction->SetKillPhot(killedPhot);
 		}
-		else
-		{  //this one kills nuclei and anit-neutrinos.  We don't care about them.
+		else if(step->GetTrack()->GetDefinition()->GetPDGEncoding() != 0)
+		{  //this one kills nuclei and anti-neutrinos.  We don't care about them.
 			track->SetTrackStatus(fStopAndKill);  
 			n = 0;
 		}
 		//in both cases, n is reset to zero after killed.  	
 	}
 
-
+//G4cout<<"volume "<<volume->GetName()<<"\n";
+//G4cout<<"copy "<<step->GetPreStepPoint()->GetTouchableHandle()->GetCopyNumber()<<"\n";
 	//if it's not an optical photon and is in the CsI, we want to know the total energy deposited and the total path length  
   	if(volume->GetName() == "CsI" && step->GetTrack()->GetDefinition()->GetPDGEncoding() != 0.)
   	{
   		// energy deposit
-  		G4double edep = step->GetTotalEnergyDeposit();
+  		G4double edep = step->GetTotalEnergyDeposit()/keV;
   
   		// step length
   		G4double stepLength = 0.;
@@ -124,24 +125,46 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     										   //be stored in the ntuple.
 	}
 	
-	if(track->GetDefinition()->GetPDGEncoding() == 11 && track->GetKineticEnergy() == 0) {
-		track->SetTrackStatus(fStopAndKill);
+	G4double x0, y0, z0;
+	G4double copyNo[10];
+	G4int counter;
+	if(nstep == 0)counter = 0;
+	
+	if(track->GetNextVolume())
+	{	
+		if(track->GetNextVolume()->GetName() == "camera" && step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0)
+		//if there's an optical photon in the camera, we want to count it as detected.
+		{
+		detPhot++;
+		fEventAction->SetDetPhot(detPhot);
+		}
+		
+		if(track->GetDefinition()->GetPDGEncoding() == 11 || track->GetDefinition()->GetPDGEncoding() == 22 || track->GetDefinition()->GetPDGEncoding() == 1000020040)
+		{
+			if(volume->GetName() == "World" && track->GetNextVolume()->GetName() == "CsI")
+			{
+				copyNo[counter]=step->GetPostStepPoint()->GetTouchableHandle()->GetCopyNumber();
+				G4cout<<"copy no "<<copyNo[counter]<<"\n";
+				x0 = track->GetPosition().x()/mm;
+				y0 = track->GetPosition().y()/mm;
+				z0 = track->GetPosition().z()/mm;
+				//G4cout<<"x = "<<x0<<"\ty = "<<y0<<"\tx = "<<z0<<"\n";
+				fEventAction->SetIntPoint(copyNo[counter], x0, y0, z0, counter);
+			}
+		}
+
 	}
-	
-	
-	//G4cout << track->GetKineticEnergy() / keV << " ";
-	//G4cout << track->GetDefinition()->GetParticleName();
-	//if(track->GetTrackStatus() == fStopAndKill) G4cout << " has been killed!\n";
-	//else G4cout << "\n";
-	
-	
+	else if(!track->GetNextVolume() && step->GetTrack()->GetDefinition()->GetPDGEncoding() == 0)
+	{
+		if(step->GetPreStepPoint()->GetMomentumDirection().z()>0)
+		{
+		backPhot++;
+		fEventAction->SetBackPhot(backPhot);
+		}
+	}
+
 	nstep++;
-	if(track->GetTrackStatus()==2)nstep = 0;  //reset nstep if the track is killed
-}
 
-void SteppingAction::GetSecondariesOfCurrentStep(G4SteppingManager *fSteppingManager) {
-	
 }
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

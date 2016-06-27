@@ -36,8 +36,6 @@
 #include "G4UnitsTable.hh"
 #include "G4SystemOfUnits.hh"
 
-
-
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 RunAction::RunAction()
@@ -73,19 +71,41 @@ void RunAction::BeginOfRunAction(const G4Run* run)
   
   // Open an output file
   //
-  G4String fileName = "YExample";
-  analysisManager->OpenFile(fileName);
+  G4String fileName = "SLIMER";
+/*  analysisManager->OpenFile(fileName);
   analysisManager->SetFirstHistoId(1);
 
  
   // Creating ntuple
   //
-  analysisManager->CreateNtuple("YExample", "Data");
+  analysisManager->CreateNtuple("SLIMER", "Data");
   analysisManager->CreateNtupleDColumn("PrimaryEn");
+  analysisManager->CreateNtupleDColumn("PrimaryX");
+  analysisManager->CreateNtupleDColumn("PrimaryY");
+  analysisManager->CreateNtupleDColumn("PrimaryZ");
   analysisManager->CreateNtupleDColumn("Eabs");
   analysisManager->CreateNtupleDColumn("Labs");
+  analysisManager->CreateNtupleDColumn("NphotonsCreated");
+  analysisManager->CreateNtupleDColumn("NphotonsDetected");
+  analysisManager->CreateNtupleDColumn("NphotonsKilled");
+  analysisManager->CreateNtupleDColumn("BackScatter");
+  analysisManager->CreateNtupleDColumn("InitialX");
+  analysisManager->CreateNtupleDColumn("InitialY");
+  analysisManager->CreateNtupleDColumn("InitialZ");
+  analysisManager->CreateNtupleDColumn("CopyNoHit");
   analysisManager->FinishNtuple();
+  */
   
+  tree = new TTree("Data", "Title");
+Int_t eventid;
+tree->Branch("eventid",&eventid);
+tree->Branch("LayerData",en_dep,"en_dep[20]/F");
+for each event (id) do {
+   eventid = evt->GetEventID();
+   // set value in en_dep
+   tree->Fill();
+}
+tree->Write();
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -96,7 +116,6 @@ void RunAction::EndOfRunAction(const G4Run* aRun)
 
   analysisManager->Write();
   analysisManager->CloseFile();
-  
   
   // complete cleanup
   //
