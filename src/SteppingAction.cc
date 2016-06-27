@@ -88,7 +88,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
 
 
 // if it's an optical photon, they can go on forever.  We want to kill some of these.  
-// n>1 is really strict.  Using that while I work out some other issues.
 // Also killing daughter nuclei Np237 and N14 so that they don't fly off and collide with the CsI.  
 // Need to confine them to a material....
 
