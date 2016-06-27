@@ -1,2 +1,2 @@
 # simulation
-Geant4 simulation for SLIMEr
+Geant4 simulation for SLIMER
